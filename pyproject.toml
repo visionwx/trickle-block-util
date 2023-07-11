@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "trickle-block-util"
+version = "0.1.0"
+description = ""
+authors = ["yanwei <wei.yan@visionwx.com>"]
+readme = "README.md"
+packages = [{include = "trickle_block_util"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pytz = "^2023.3"
+tiktoken = "^0.4.0"
+mistune = "^3.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
