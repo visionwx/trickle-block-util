@@ -550,8 +550,8 @@ class TrickleBlockRenderer(MarkdownRenderer):
             return self.emphasis
         elif name == "strong":
             return self.strong
-        # elif name == "link":
-        #     return self.link
+        elif name == "link":
+            return self.link
         # elif name == "image":
         #     return self.image
         elif name == "codespan":
@@ -696,7 +696,10 @@ class TrickleBlockRenderer(MarkdownRenderer):
         )]
 
     def link(self, token: Dict[str, Any], state: BlockState) -> List[Element]:
-        return []
+        return [Element.link(
+            text=self.getRawText(token=token),
+            value=token.get('attrs',{}).get('url','https://#')
+        )]
 
     def image(self, token: Dict[str, Any], state: BlockState) -> List[Element]:
         return []
