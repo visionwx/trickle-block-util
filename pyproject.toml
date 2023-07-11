@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["yanwei <wei.yan@visionwx.com>"]
 readme = "README.md"
-packages = [{include = "trickle_block_util"}]
+#packages = [{include = "trickle_block_util"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
