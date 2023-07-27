@@ -409,6 +409,11 @@ class Block:
                 self.userDefinedValue) is dict:
             return urllib.parse.quote(
                 self.userDefinedValue.get("url", "https://#"), safe=':/')
+        if self.userDefinedValue != None and type(self.userDefinedValue) is str \
+            and self.userDefinedValue.startswith("https://"):
+            return urllib.parse.quote(
+                self.userDefinedValue, safe=':/')
+
         return "https://#"
 
     def getFileUrl(self) -> str:
