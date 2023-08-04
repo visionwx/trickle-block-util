@@ -163,6 +163,21 @@ class Element:
         )
 
     @classmethod
+    def image(cls, text, value):
+        return Element.copyDefault(
+            type=ElementType.image,
+            text="",
+            value={
+                "id": generateUUID(),
+                "name": "",
+                "uploadFailed": False,
+                "uploaded": True,
+                "uploading": False,
+                "url": value
+            }
+        )
+
+    @classmethod
     def user(cls, name, memberId):
         return Element.copyDefault(
             type=ElementType.user,
@@ -380,6 +395,13 @@ class Block:
             type=BlockType.number_list,
             elements=elements
         )
+    
+    @classmethod
+    def gallery(cls, elements: List[Element]):
+        return Block.copyDefault(
+            type=BlockType.gallery,
+            elements=elements
+        )
 
     def render(self):
         return [self.toJson()]
@@ -557,8 +579,8 @@ class TrickleBlockRenderer(MarkdownRenderer):
             return self.strong
         elif name == "link":
             return self.link
-        # elif name == "image":
-        #     return self.image
+        elif name == "image":
+            return self.image
         elif name == "codespan":
             return self.codespan
         elif name == "inline_html":
@@ -701,13 +723,20 @@ class TrickleBlockRenderer(MarkdownRenderer):
         )]
 
     def link(self, token: Dict[str, Any], state: BlockState) -> List[Element]:
+        url = token.get('attrs',{}).get('url','https://#')
+        rawText = self.getRawText(token=token)
+        if rawText == "":
+            rawText = url
         return [Element.link(
-            text=self.getRawText(token=token),
-            value=token.get('attrs',{}).get('url','https://#')
+            text=rawText,
+            value=url
         )]
 
     def image(self, token: Dict[str, Any], state: BlockState) -> List[Element]:
-        return []
+        return [Element.image(
+            text="",
+            value=token.get('attrs',{}).get('url','https://#')
+        )]
 
     def codespan(self, token: Dict[str, Any], state: BlockState) -> List[
         Element]:
@@ -749,9 +778,14 @@ class TrickleBlockRenderer(MarkdownRenderer):
 
     def paragraph(self, token: Dict[str, Any], state: BlockState) -> List[
         Block]:
+        childrenTokens = token.get("children", [])
+        if len(childrenTokens) == 1 and childrenTokens[0].get("type","") == ElementType.image:
+            return [Block.gallery(
+                elements=self.render_elements(childrenTokens, state)
+            )]
         return [Block.copyDefault(
             type=BlockType.text,
-            elements=self.render_elements(token.get("children", []), state)
+            elements=self.render_elements(childrenTokens, state)
         )]
 
     def heading(self, token: Dict[str, Any], state: BlockState) -> List[Block]:
