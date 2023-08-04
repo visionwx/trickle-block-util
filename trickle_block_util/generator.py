@@ -778,15 +778,28 @@ class TrickleBlockRenderer(MarkdownRenderer):
 
     def paragraph(self, token: Dict[str, Any], state: BlockState) -> List[
         Block]:
+        out = []
+        otherTokens = []
         childrenTokens = token.get("children", [])
-        if len(childrenTokens) == 1 and childrenTokens[0].get("type","") == ElementType.image:
-            return [Block.gallery(
-                elements=self.render_elements(childrenTokens, state)
-            )]
-        return [Block.copyDefault(
-            type=BlockType.text,
-            elements=self.render_elements(childrenTokens, state)
-        )]
+        for perC in childrenTokens:
+            if perC.get("type","") == ElementType.image:
+                if len(otherTokens) > 0:
+                    out.append(Block.copyDefault(
+                        type=BlockType.text,
+                        elements=self.render_elements(otherTokens, state)
+                    ))
+                    otherTokens = []
+                out.append(Block.gallery(
+                    elements=self.render_elements([perC], state)
+                ))
+            else:
+                otherTokens.append(perC)
+        if len(otherTokens) > 0:
+            out.append(Block.copyDefault(
+                type=BlockType.text,
+                elements=self.render_elements(otherTokens, state)
+            ))
+        return out
 
     def heading(self, token: Dict[str, Any], state: BlockState) -> List[Block]:
         # {'attrs': {'level': 1},
