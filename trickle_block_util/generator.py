@@ -773,8 +773,8 @@ class TrickleBlockRenderer(MarkdownRenderer):
     def blank_line(self, token: Dict[str, Any], state: BlockState) -> List[
         Block]:
         # {'type': 'blank_line'}
-        # return [Block.raw(text=token.get("raw",""))]
-        return []
+        return [Block.raw(text="")]
+        # return []
 
     def paragraph(self, token: Dict[str, Any], state: BlockState) -> List[
         Block]:
