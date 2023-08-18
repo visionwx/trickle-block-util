@@ -61,6 +61,7 @@ class BlockType:
     todos = "todos"
     file = "file"
     nest = "nest"
+    table = "table"
 
 
 class ElementType:
@@ -271,6 +272,7 @@ class Block:
     updatedByRemote: Optional[bool]
     computedValue = None
     userDefinedValue = None
+    isDeleted: Optional[bool] = None
 
     def __init__(self, data):
         self.id = data.get('id')
@@ -289,6 +291,8 @@ class Block:
         self.updatedByRemote = data.get('updatedByRemote', False)
         self.computedValue = data.get('computedValue', None)
         self.userDefinedValue = data.get('userDefinedValue', None)
+        self.isDeleted = data.get('isDeleted', None)
+
 
     @classmethod
     def fromJson(cls, data: dict):
@@ -476,6 +480,28 @@ class Block:
         out = out + "\n"
         return out
 
+    def tableToMarkdown(self):
+        # table内容藏在了 blocks的userDefinedValue的content中。
+        tableContent = self.userDefinedValue.get('content')
+        withHeadings = self.userDefinedValue.get('withHeadings')
+        out = "\n"
+        if withHeadings:
+            # 添加表头， tableContent[0]就是表头:
+            headings = tableContent.pop(0)
+            for perhead in headings:
+                out = out + " | " + f'{perhead}'
+            out = out + " |" + "\n"
+            for _ in headings:
+                out = out + " | " + "------------ "
+            out = out + " |" + "\n"
+
+        for perRow in tableContent:
+            for perColum in perRow:
+                out = out + " | " + f'{perColum}'
+            out = out + " |" + "\n"
+
+        return out
+
     def toDosToMarkdown(self):
         if len(self.blocks) != 3:
             return ""
@@ -533,6 +559,10 @@ class Block:
             return self.toDosToMarkdown()
         elif self.type == BlockType.file:
             return "[Attachment](" + self.getFileUrl() + ")"
+
+        elif self.type == BlockType.table:
+            return self.tableToMarkdown()
+
         return ""
 
 
@@ -970,7 +1000,10 @@ def truncateText(text, maxTokens):
 def blocksToMarkdown(blocks):
     out: List[str] = []
     for perBlk in blocks:
-        out.append(Block(perBlk).toMarkdown())
+        blk = Block(perBlk)
+        if blk.isDeleted:
+            return
+        out.append(blk.toMarkdown())
     return "\n".join(out)
 
 
@@ -1117,18 +1150,43 @@ if __name__ == "__main__":
     # markdownJson = markdown(text)
     # pprint.pprint(markdownJson)
     # json.dump(markdownJson, open("blocks.json",'w'))
-
-    aim2 = '1) This could be a game changer for website design! Can it be integrated with popular website builders like Wix or Squarespace?\n2) Finally, a tool that can help streamline web design. Kudos to the Trickle AI team!\n3) I love the idea of having AI assist with web design. Excited to see what Trickle AI can do!'
-    aim3 = 'Sure, here are some Unsplash links that you can use to find high-resolution images for your desktop background:\n\n1. https://unsplash.com/\n2. https://unsplash.com/wallpapers/desktop\n3. https://unsplash.com/collections/desktop-wallpapers\n4. https://unsplash.com/search/photos/desktop-background\n5. https://unsplash.com/s/photos/high-resolution-desktop-wallpaper\n\nI hope this helps! Let me know if you need further assistance.'
-    aim4 = '| Product Name | ID | Qty | Price |\n|--------------|------|-----|-------|\n| Apple | 1001 | 10 | $1.00 |\n| Banana | 1002 | 5 | $0.50 |\n| Orange | 1003 | 8 | $0.75 |\n| Grapes | 1004 | 3 | $2.50 |'
-
-    aim5 = '好的，让我为您展示如何使用Vue 3来创建一个简单的登陆注册页面吧。首先，让我们从基本结构开始：\n```html\n<template>\n  <div>\n    <h1>Login/Register</h1>\n    <form>\n      <div>\n        <label for="username">Username:</label>\n        <input type="text" id="username" v-model="username">\n      </div>\n      <div>\n        <label for="password">Password:</label>\n        <input type="password" id="password" v-model="password">\n      </div>\n      <button type="submit" @click.prevent="submitForm">Submit</button>\n      <button type="button" @click="toggleFormMode">{{ mode === \'login\' ? \'Register\' : \'Login\' }}</button>\n    </form>\n  </div>\n</template>\n\n<script>\n  export default {\n    data() {\n      return {\n        mode: \'login\', // 初始状态为登陆\n        username: \'\',\n        password: \'\'\n      }\n    },\n    methods: {\n      toggleFormMode() {\n        // 切换登录/注册模式\n        this.mode = this.mode === \'login\' ? \'register\' : \'login\';\n      },\n      submitForm() {\n        // 处理表单提交逻辑\n        console.log(`Submitted ${this.mode} form with username=${this.username} and password=${this.password}`);\n      }\n    }\n  }\n</script>\n\n```\n在这个例子中，我们有一个初始状态为登陆的表单，但用户可以通过点击切换到注册模式。另外，我们收集了用户名和密码信息，并在表单提交时记录这两个值。\n请注意，此代码仅包含在单个文件中的组件代码。因此，可以将其直接导入到你的应用程序中以使用该组件。\n希望这个简单的例子能为您提供一些帮助！如果您有任何其他问题，请随时问我。'
-    markdown = mistune.create_markdown(renderer=TrickleBlockRenderer(),
-                                       hard_wrap=True)
-    markdownJson = markdown(aim5)
-    pprint.pprint(markdownJson)
+    #
+    # aim2 = '1) This could be a game changer for website design! Can it be integrated with popular website builders like Wix or Squarespace?\n2) Finally, a tool that can help streamline web design. Kudos to the Trickle AI team!\n3) I love the idea of having AI assist with web design. Excited to see what Trickle AI can do!'
+    # aim3 = 'Sure, here are some Unsplash links that you can use to find high-resolution images for your desktop background:\n\n1. https://unsplash.com/\n2. https://unsplash.com/wallpapers/desktop\n3. https://unsplash.com/collections/desktop-wallpapers\n4. https://unsplash.com/search/photos/desktop-background\n5. https://unsplash.com/s/photos/high-resolution-desktop-wallpaper\n\nI hope this helps! Let me know if you need further assistance.'
+    # aim4 = '| Product Name | ID | Qty | Price |\n|--------------|------|-----|-------|\n| Apple | 1001 | 10 | $1.00 |\n| Banana | 1002 | 5 | $0.50 |\n| Orange | 1003 | 8 | $0.75 |\n| Grapes | 1004 | 3 | $2.50 |'
+    #
+    # aim5 = '好的，让我为您展示如何使用Vue 3来创建一个简单的登陆注册页面吧。首先，让我们从基本结构开始：\n```html\n<template>\n  <div>\n    <h1>Login/Register</h1>\n    <form>\n      <div>\n        <label for="username">Username:</label>\n        <input type="text" id="username" v-model="username">\n      </div>\n      <div>\n        <label for="password">Password:</label>\n        <input type="password" id="password" v-model="password">\n      </div>\n      <button type="submit" @click.prevent="submitForm">Submit</button>\n      <button type="button" @click="toggleFormMode">{{ mode === \'login\' ? \'Register\' : \'Login\' }}</button>\n    </form>\n  </div>\n</template>\n\n<script>\n  export default {\n    data() {\n      return {\n        mode: \'login\', // 初始状态为登陆\n        username: \'\',\n        password: \'\'\n      }\n    },\n    methods: {\n      toggleFormMode() {\n        // 切换登录/注册模式\n        this.mode = this.mode === \'login\' ? \'register\' : \'login\';\n      },\n      submitForm() {\n        // 处理表单提交逻辑\n        console.log(`Submitted ${this.mode} form with username=${this.username} and password=${this.password}`);\n      }\n    }\n  }\n</script>\n\n```\n在这个例子中，我们有一个初始状态为登陆的表单，但用户可以通过点击切换到注册模式。另外，我们收集了用户名和密码信息，并在表单提交时记录这两个值。\n请注意，此代码仅包含在单个文件中的组件代码。因此，可以将其直接导入到你的应用程序中以使用该组件。\n希望这个简单的例子能为您提供一些帮助！如果您有任何其他问题，请随时问我。'
+    # markdown = mistune.create_markdown(renderer=TrickleBlockRenderer(),
+    #                                    hard_wrap=True)
+    # markdownJson = markdown(aim5)
+    # pprint.pprint(markdownJson)
 
     # pprint.pprint()
+
+
+    tableBlocks = [{
+    "id": "QyWIn2dA3w",
+    "type": "table",
+    "blocks": [],
+    "elements": [],
+    "userDefinedValue": {
+        "withHeadings": True,
+        "content": [
+            [
+                "1",
+                "2"
+            ],
+            [
+                "3",
+                "4"
+            ]
+        ]
+    },
+    "indent": 0
+}]
+
+    result = blocksToMarkdown(tableBlocks)
+    print(result)
 
     # out = createAssistantCommentBlocks(
     #     messageFromAI=aim2
