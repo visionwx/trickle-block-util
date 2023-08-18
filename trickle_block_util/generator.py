@@ -485,15 +485,14 @@ class Block:
         tableContent = self.userDefinedValue.get('content')
         withHeadings = self.userDefinedValue.get('withHeadings')
         out = "\n"
-        if withHeadings:
-            # 添加表头， tableContent[0]就是表头:
-            headings = tableContent.pop(0)
-            for perhead in headings:
-                out = out + " | " + f'{perhead}'
-            out = out + " |" + "\n"
-            for _ in headings:
-                out = out + " | " + "------------ "
-            out = out + " |" + "\n"
+        # 添加表头， tableContent[0]就是表头:
+        headings = tableContent.pop(0)
+        for perhead in headings:
+            out = out + " | " + f'{perhead}'
+        out = out + " |" + "\n"
+        for _ in headings:
+            out = out + " | " + "------------ "
+        out = out + " |" + "\n"
 
         for perRow in tableContent:
             for perColum in perRow:
@@ -1175,10 +1174,6 @@ if __name__ == "__main__":
             [
                 "1",
                 "2"
-            ],
-            [
-                "3",
-                "4"
             ]
         ]
     },
