@@ -1001,7 +1001,7 @@ def blocksToMarkdown(blocks):
     for perBlk in blocks:
         blk = Block(perBlk)
         if blk.isDeleted:
-            return
+            continue
         out.append(blk.toMarkdown())
     return "\n".join(out)
 
