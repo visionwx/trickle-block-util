@@ -995,7 +995,6 @@ def truncateText(text, maxTokens):
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     return encoding.decode(encoding.encode(text)[:maxTokens])
 
-
 def blocksToMarkdown(blocks):
     out: List[str] = []
     for perBlk in blocks:
