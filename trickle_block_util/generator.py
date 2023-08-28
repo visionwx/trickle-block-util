@@ -1004,7 +1004,7 @@ def blocksToMarkdown(blocks):
             continue
 
         out.append(blk.toMarkdown())
-    return "\n".join(out)
+    return "\n\n".join(out)
 
 
 def generateTrickleContentPrompt(title: str, blocks: list, maxTokens=1500):
@@ -1179,8 +1179,46 @@ if __name__ == "__main__":
         ]
     },
     "indent": 0
-}]
+},
+        {
+            "id": "v8j3jH4eL1",
+            "type": "rich_texts",
+            "blocks": [],
+            "elements": [
+                {
+                    "id": "e0ed4cc2-b4f2-4b09-ba84-62129d7f2036",
+                    "type": "text",
+                    "elements": [],
+                    "text": "2026年乐事薯片销量"
+                }
+            ],
+            "indent": 0,
+            "lastModifiedSource": "246493410695839749",
+            "lastModifiedSourceType": "remote",
+            "isDeleted": None
+        }
+    ]
 
+    # result = blocksToMarkdown(tableBlocks)
+    # print(result)
+
+    isDeletedBlocks=[{
+    "id": "v8j3jH4eL1",
+    "type": "rich_texts",
+    "blocks": [],
+    "elements": [
+        {
+            "id": "e0ed4cc2-b4f2-4b09-ba84-62129d7f2036",
+            "type": "text",
+            "elements": [],
+            "text": "2026年乐事薯片销量"
+        }
+    ],
+    "indent": 0,
+    "lastModifiedSource": "246493410695839749",
+    "lastModifiedSourceType": "remote",
+    "isDeleted": True
+    }]
     result = blocksToMarkdown(tableBlocks)
     print(result)
 
