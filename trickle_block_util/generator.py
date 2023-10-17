@@ -589,7 +589,7 @@ class TrickleBlockRenderer(MarkdownRenderer):
             return token["raw"]
         if token.get("type") == 'softbreak' and token.get("raw") is None:
             return '\n'
-        if token.get("type") in self.elementType and token.get("raw") is None:
+        if token.get("type") in self.elementType and token.get("raw") is None and token.get("type") != 'link':
             return ''
         # if token["type"] == "block_text":
         #     out = out + "\n"
@@ -618,6 +618,8 @@ class TrickleBlockRenderer(MarkdownRenderer):
             return self.softbreak
         elif name == "linebreak":
             return self.linebreak
+        elif name == "block_text":
+            return self.block_text
         else:
             return self.defalut_element_render
 
@@ -995,6 +997,7 @@ def truncateText(text, maxTokens):
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     return encoding.decode(encoding.encode(text)[:maxTokens])
 
+
 def blocksToMarkdown(blocks):
     out: List[str] = []
     for perBlk in blocks:
@@ -1003,7 +1006,7 @@ def blocksToMarkdown(blocks):
             continue
 
         out.append(blk.toMarkdown())
-    return "\n\n".join(out)
+    return "\n".join(out)
 
 
 def generateTrickleContentPrompt(title: str, blocks: list, maxTokens=1500):
@@ -1150,11 +1153,11 @@ if __name__ == "__main__":
     # pprint.pprint(markdownJson)
     # json.dump(markdownJson, open("blocks.json",'w'))
     #
-    # aim2 = '1) This could be a game changer for website design! Can it be integrated with popular website builders like Wix or Squarespace?\n2) Finally, a tool that can help streamline web design. Kudos to the Trickle AI team!\n3) I love the idea of having AI assist with web design. Excited to see what Trickle AI can do!'
-    # aim3 = 'Sure, here are some Unsplash links that you can use to find high-resolution images for your desktop background:\n\n1. https://unsplash.com/\n2. https://unsplash.com/wallpapers/desktop\n3. https://unsplash.com/collections/desktop-wallpapers\n4. https://unsplash.com/search/photos/desktop-background\n5. https://unsplash.com/s/photos/high-resolution-desktop-wallpaper\n\nI hope this helps! Let me know if you need further assistance.'
-    # aim4 = '| Product Name | ID | Qty | Price |\n|--------------|------|-----|-------|\n| Apple | 1001 | 10 | $1.00 |\n| Banana | 1002 | 5 | $0.50 |\n| Orange | 1003 | 8 | $0.75 |\n| Grapes | 1004 | 3 | $2.50 |'
-    #
-    # aim5 = '好的，让我为您展示如何使用Vue 3来创建一个简单的登陆注册页面吧。首先，让我们从基本结构开始：\n```html\n<template>\n  <div>\n    <h1>Login/Register</h1>\n    <form>\n      <div>\n        <label for="username">Username:</label>\n        <input type="text" id="username" v-model="username">\n      </div>\n      <div>\n        <label for="password">Password:</label>\n        <input type="password" id="password" v-model="password">\n      </div>\n      <button type="submit" @click.prevent="submitForm">Submit</button>\n      <button type="button" @click="toggleFormMode">{{ mode === \'login\' ? \'Register\' : \'Login\' }}</button>\n    </form>\n  </div>\n</template>\n\n<script>\n  export default {\n    data() {\n      return {\n        mode: \'login\', // 初始状态为登陆\n        username: \'\',\n        password: \'\'\n      }\n    },\n    methods: {\n      toggleFormMode() {\n        // 切换登录/注册模式\n        this.mode = this.mode === \'login\' ? \'register\' : \'login\';\n      },\n      submitForm() {\n        // 处理表单提交逻辑\n        console.log(`Submitted ${this.mode} form with username=${this.username} and password=${this.password}`);\n      }\n    }\n  }\n</script>\n\n```\n在这个例子中，我们有一个初始状态为登陆的表单，但用户可以通过点击切换到注册模式。另外，我们收集了用户名和密码信息，并在表单提交时记录这两个值。\n请注意，此代码仅包含在单个文件中的组件代码。因此，可以将其直接导入到你的应用程序中以使用该组件。\n希望这个简单的例子能为您提供一些帮助！如果您有任何其他问题，请随时问我。'
+    aim2 = '1) This could be a game changer for website design! Can it be integrated with popular website builders like Wix or Squarespace?\n2) Finally, a tool that can help streamline web design. Kudos to the Trickle AI team!\n3) I love the idea of having AI assist with web design. Excited to see what Trickle AI can do!'
+    aim3 = 'Sure, here are some Unsplash links that you can use to find high-resolution images for your desktop background:\n\n1. https://unsplash.com/\n2. https://unsplash.com/wallpapers/desktop\n3. https://unsplash.com/collections/desktop-wallpapers\n4. https://unsplash.com/search/photos/desktop-background\n5. https://unsplash.com/s/photos/high-resolution-desktop-wallpaper\n\nI hope this helps! Let me know if you need further assistance.'
+    aim4 = '| Product Name | ID | Qty | Price |\n|--------------|------|-----|-------|\n| Apple | 1001 | 10 | $1.00 |\n| Banana | 1002 | 5 | $0.50 |\n| Orange | 1003 | 8 | $0.75 |\n| Grapes | 1004 | 3 | $2.50 |'
+
+    aim5 = '好的，让我为您展示如何使用Vue 3来创建一个简单的登陆注册页面吧。首先，让我们从基本结构开始：\n```html\n<template>\n  <div>\n    <h1>Login/Register</h1>\n    <form>\n      <div>\n        <label for="username">Username:</label>\n        <input type="text" id="username" v-model="username">\n      </div>\n      <div>\n        <label for="password">Password:</label>\n        <input type="password" id="password" v-model="password">\n      </div>\n      <button type="submit" @click.prevent="submitForm">Submit</button>\n      <button type="button" @click="toggleFormMode">{{ mode === \'login\' ? \'Register\' : \'Login\' }}</button>\n    </form>\n  </div>\n</template>\n\n<script>\n  export default {\n    data() {\n      return {\n        mode: \'login\', // 初始状态为登陆\n        username: \'\',\n        password: \'\'\n      }\n    },\n    methods: {\n      toggleFormMode() {\n        // 切换登录/注册模式\n        this.mode = this.mode === \'login\' ? \'register\' : \'login\';\n      },\n      submitForm() {\n        // 处理表单提交逻辑\n        console.log(`Submitted ${this.mode} form with username=${this.username} and password=${this.password}`);\n      }\n    }\n  }\n</script>\n\n```\n在这个例子中，我们有一个初始状态为登陆的表单，但用户可以通过点击切换到注册模式。另外，我们收集了用户名和密码信息，并在表单提交时记录这两个值。\n请注意，此代码仅包含在单个文件中的组件代码。因此，可以将其直接导入到你的应用程序中以使用该组件。\n希望这个简单的例子能为您提供一些帮助！如果您有任何其他问题，请随时问我。'
     # markdown = mistune.create_markdown(renderer=TrickleBlockRenderer(),
     #                                    hard_wrap=True)
     # markdownJson = markdown(aim5)
@@ -1163,66 +1166,32 @@ if __name__ == "__main__":
     # pprint.pprint()
 
 
-    tableBlocks = [{
-    "id": "QyWIn2dA3w",
-    "type": "table",
-    "blocks": [],
-    "elements": [],
-    "userDefinedValue": {
-        "withHeadings": True,
-        "content": [
-            [
-                "1",
-                "2"
-            ]
-        ]
-    },
-    "indent": 0
-},
-        {
-            "id": "v8j3jH4eL1",
-            "type": "rich_texts",
-            "blocks": [],
-            "elements": [
-                {
-                    "id": "e0ed4cc2-b4f2-4b09-ba84-62129d7f2036",
-                    "type": "text",
-                    "elements": [],
-                    "text": "2026年乐事薯片销量"
-                }
-            ],
-            "indent": 0,
-            "lastModifiedSource": "246493410695839749",
-            "lastModifiedSourceType": "remote",
-            "isDeleted": None
-        }
-    ]
+    # tableBlocks = [{
+    #     "id": "QyWIn2dA3w",
+    #     "type": "table",
+    #     "blocks": [],
+    #     "elements": [],
+    #     "userDefinedValue": {
+    #         "withHeadings": True,
+    #         "content": [
+    #             [
+    #                 "1",
+    #                 "2"
+    #             ]
+    #         ]
+    #     },
+    #     "indent": 0
+    # }]
 
     # result = blocksToMarkdown(tableBlocks)
     # print(result)
 
-    isDeletedBlocks=[{
-    "id": "v8j3jH4eL1",
-    "type": "rich_texts",
-    "blocks": [],
-    "elements": [
-        {
-            "id": "e0ed4cc2-b4f2-4b09-ba84-62129d7f2036",
-            "type": "text",
-            "elements": [],
-            "text": "2026年乐事薯片销量"
-        }
-    ],
-    "indent": 0,
-    "lastModifiedSource": "246493410695839749",
-    "lastModifiedSourceType": "remote",
-    "isDeleted": True
-    }]
-    result = blocksToMarkdown(tableBlocks)
-    print(result)
-
-    # out = createAssistantCommentBlocks(
-    #     messageFromAI=aim2
-    # )
-    # pprint.pprint(out)
+    aim6 = "**Rethinking the Single Spokesperson Model of Crisis Communication**\nThe screenshot highlights a research paper by Littlefield R. S. and Cowden K. presented at a convention, and a highly recommended book available on Amazon.\n\n- Authors: Littlefield R. S., Cowden K.\n- Event: Annual Convention of the National Communication Association, November 2006\n- Location: San Antonio, TX\n- Paper: Rethinking the single spokesperson model of crisis communication\n- Source: [ResearchGate](https://www.researchgate.net/publication/228418318)\n- Recommended Book: Available on [Amazon](http://www.amazon.com/gp/product/4047289043/ref=s9_simh_gw_p14_do_i1?pf_rd_m=ATVPDKIKXODER&pf_rd_s=center-2&pf_rd_r=1H3WORY9Z8HFSDW276P5&pf_rd_t=101&pf_rd_p=1688200382&pf_rd_i=507846)"
+    aim7 = "**Creating a Custom LLM ChatBot**\n\nThe screenshot discusses the process of creating a custom Language Model (LLM) ChatBot. It involves strategies like chunking, context generation, and embedding, and uses algorithms like E5 and BERT. The performance of the models is evaluated using scores like BLEU, METEOR, BERT, and ROGUE.\n\n- The document retriever generates responses using all possible combinations of strategies and LLM choices.\n- The models are evaluated based on their scores, with values like 0.91, 0.75, and 0.74 mentioned.\n- The screenshot also mentions a model named ABACUS.AI."
+    aim8 = "**Affirmation of the year, right here. Anyone else?**\nThe user @yournewfrequency shares a personal growth affirmation on Instagram, receiving significant engagement.\n\n- App: Instagram\n- User: @yournewfrequency\n- Location: San Diego, California\n- Likes: 1,482 (including julianabeattie)\n- Date: August 31\n- Comments: 48"
+    aim9 = "**Apple Q3 FY23 Income Statement**\nThe screenshot provides a comprehensive analysis of Apple's financial performance in Q3 FY23, with a focus on revenue sources and expenses.\n\n- Total Revenue: $81.8B\n- Gross Profit: $36.4B\n- Operating Profit: $23.0B\n- Net Profit: $19.9B\n- Major revenue sources: iPhone ($39.7B), Services ($21.2B), MacBook and other products ($21B)\n- Major expenses: Cost of revenue ($45.4B), Operating expenses ($13.48)\n- Period: Q3 FY23, ending June 2023\n- Source: [appeconomyinsights.com](http://appeconomyinsights.com)"
+    out = createAssistantCommentBlocks(
+        messageFromAI=aim8
+    )
+    pprint.pprint(out)
     # json.dump(out, open("blocks.json",'w'))
