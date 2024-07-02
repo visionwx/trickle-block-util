@@ -517,52 +517,55 @@ class Block:
         return out
 
     def toMarkdown(self):
+        out = ""
         if self.type == BlockType.h1:
-            return "# " + "".join([e.toMarkdown() for e in self.elements])
+            out = "# " + "".join([e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.h2:
-            return "## " + "".join([e.toMarkdown() for e in self.elements])
+            out = "## " + "".join([e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.h3:
-            return "### " + "".join([e.toMarkdown() for e in self.elements])
+            out = "### " + "".join([e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.text:
-            return "".join([e.toMarkdown() for e in self.elements])
+            out = "".join([e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.list:
-            return "- " + "".join([e.toMarkdown() for e in self.elements])
+            out = "- " + "".join([e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.number_list:
-            return self.getNumberPrefix() + " " + "".join(
+            out = self.getNumberPrefix() + " " + "".join(
                 [e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.checkbox:
-            return "- [" + (
+            out = "- [" + (
                 " " if self.getCheckboxValue() == "unchecked" else "x") + "] " + "".join(
                 [e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.code:
-            return "```" + self.getCodeLang() + "\n" + "".join(
+            out = "```" + self.getCodeLang() + "\n" + "".join(
                 [e.toMarkdown() for e in self.elements]) + "\n```"
         elif self.type == BlockType.quote:
-            return "\n".join(["> " + b.toMarkdown() for b in self.blocks])
+            out = "\n".join(["> " + b.toMarkdown() for b in self.blocks])
         elif self.type == BlockType.webBookmark:
-            return "[WebBookmark](" + self.getWebBookmarkUrl() + ")"
+            out = "[WebBookmark](" + self.getWebBookmarkUrl() + ")"
         elif self.type == BlockType.embed:
             embedValues = self.getEmbedValue()
-            return "```html\n<html><body style='height: " + str(
+            out = "```html\n<html><body style='height: " + str(
                 embedValues[0]) + "px'>" + embedValues[
                 1] + "</body></html>" + "\n```"
         elif self.type == BlockType.gallery:
-            return "".join([e.toMarkdown() for e in self.elements])
+            out = "".join([e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.reference:
-            return "".join([e.toMarkdown() for e in self.elements])
+            out = "".join([e.toMarkdown() for e in self.elements])
         elif self.type == BlockType.hr:
-            return "---"
+            out = "---"
         elif self.type == BlockType.vote:
-            return self.voteToMarkdown()
+            out = self.voteToMarkdown()
         elif self.type == BlockType.todos:
-            return self.toDosToMarkdown()
+            out = self.toDosToMarkdown()
         elif self.type == BlockType.file:
-            return "[Attachment](" + self.getFileUrl() + ")"
+            out = "[Attachment](" + self.getFileUrl() + ")"
 
         elif self.type == BlockType.table:
-            return self.tableToMarkdown()
-
-        return ""
+            out = self.tableToMarkdown()
+        
+        # append indent
+        out = "".join(["  " for _ in range(self.indent)]) + out
+        return out
 
 
 class TrickleBlockRenderer(MarkdownRenderer):
@@ -934,16 +937,30 @@ class TrickleBlockRenderer(MarkdownRenderer):
             return self.render_bulletpoint_list(token, state)
 
     def render_bulletpoint_list(self, token: Dict[str, Any],
-                                state: BlockState) -> List[Block]:
+                                state: BlockState, indent: int = 0) -> List[Block]:
         outs = []
         for b in token.get("children", []):
-            
-            outs.append(
-                Block.copyDefault(
-                    type=BlockType.list,
-                    elements=self.render_elements(b.get("children", []), state)
+            eles = []
+            for perE in b.get("children", []):
+                if perE["type"] == "paragraph":
+                    outs.append(
+                        Block.copyDefault(
+                            type=BlockType.list,
+                            elements=self.render_elements(perE.get("children", []), state)
+                        )
+                    )
+                elif perE["type"] == "list":
+                    outs = outs + self.render_bulletpoint_list(perE, state, indent=indent+1)
+                else:
+                    eles.append(perE)
+            if len(eles) > 0:
+                outs.append(
+                    Block.copyDefault(
+                        type=BlockType.list,
+                        elements=self.render_elements(eles, state),
+                        indent = indent,
+                    )
                 )
-            )
         return outs
 
     def render_numberpoint_list(self, token: Dict[str, Any],
@@ -1197,7 +1214,9 @@ if __name__ == "__main__":
     aim9 = "**Apple Q3 FY23 Income Statement**\nThe screenshot provides a comprehensive analysis of Apple's financial performance in Q3 FY23, with a focus on revenue sources and expenses.\n\n- Total Revenue: $81.8B\n- Gross Profit: $36.4B\n- Operating Profit: $23.0B\n- Net Profit: $19.9B\n- Major revenue sources: iPhone ($39.7B), Services ($21.2B), MacBook and other products ($21B)\n- Major expenses: Cost of revenue ($45.4B), Operating expenses ($13.48)\n- Period: Q3 FY23, ending June 2023\n- Source: [appeconomyinsights.com](http://appeconomyinsights.com)"
     aim10 = "**热门产品列表**\n\n这张图片展示了多个热门产品的列表，每个产品都有其简短描述、分类、点赞数和用户评论。\n\n- **Motiff**: AI驱动的专业UI设计工具\n  - 分类: 设计工具, 生产力\n  - 点赞数: 652\n  - 用户评论: \"恭喜！我喜欢你们的登陆页面，干净且信息丰富。\"\n\n- **Shoutout**: 用户获取、入驻和参与的激励平台\n  - 分类: 营销, 增长黑客, SaaS\n  - 点赞数: 443\n  - 用户评论: \"恭喜发布！\"\n\n- **moimoi**: 用卡片记录你的生活\n  - 分类: 技术, 制作工具\n  - 点赞数: 382\n\n- **Summer**: 为博客读者提供AI摘要按钮\n  - 分类: 写 作, 营销\n  - 点赞数: 289\n\n- **SoonCall**: 管理你的友谊并更频繁地与朋友通话\n  - 分类: iOS, CRM, 健康\n  - 点赞数: 224\n  - 用户评论: \"找到合适的时间往往是问题所在。如果你 按节奏安排，生活就会发生变化...\"\n\n- **DeltaHub**: 在一个计划中设置和管理你的美国有限责任公司\n  - 分类: SaaS, 法律\n  - 点赞数: 148\n\n- **Weekly Calendar in Todoist**: 制 定清晰的每周计划，包含时间块任务和事件\n  - 分类: 任务管理, 日历\n  - 点赞数: 167"
     out = createAssistantCommentBlocks(
-        messageFromAI=aim10
+        messageFromAI=aim9
     )
     pprint.pprint(out)
+    c = blocksToMarkdown(out)
+    print(c)
     # json.dump(out, open("blocks.json",'w'))
