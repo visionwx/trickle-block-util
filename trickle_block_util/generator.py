@@ -579,12 +579,16 @@ class TrickleBlockRenderer(MarkdownRenderer):
     elementType = ['emphasis', 'strong', 'link', 'image', 'codespan',
                    'inline_html', 'linebreak']
 
-    def getRawText(self, token: Dict[str, Any]) -> str:
+    def getRawText(self, token: Dict[str, Any], depth: int = 1) -> str:
 
         out = ''
         if len(token.get("children", [])) > 0:
             for perSubToken in token.get("children", []):
-                out = out + self.getRawText(perSubToken)
+                # print(f"{depth}: {perSubToken}")
+                rText = self.getRawText(perSubToken, depth=depth+1)
+                # print(f"{depth}: {rText=}, {out=}") 
+                out = out + rText
+            return out
         if token.get("raw") is not None:
             return token["raw"]
         if token.get("type") == 'softbreak' and token.get("raw") is None:
@@ -626,7 +630,7 @@ class TrickleBlockRenderer(MarkdownRenderer):
     def defalut_element_render(self, token: Dict[str, Any],
                                state: BlockState) -> List[Element]:
         text = self.getRawText(token)
-        print(f'defalut_element_render: {text=}')
+        # print(f'defalut_element_render: {text=}')
         return [Element.normalText(
             text=text
         )]
@@ -723,8 +727,8 @@ class TrickleBlockRenderer(MarkdownRenderer):
         Block]:
         blocks = []
         for b in tokens:
-            print(f'render_blocks:')
-            pprint.pprint(b)
+            # print(f'render_blocks:')
+            # pprint.pprint(b)
             func = self._get_block_method(b["type"])
             blocks = blocks + func(b, state)
         return blocks
@@ -933,6 +937,7 @@ class TrickleBlockRenderer(MarkdownRenderer):
                                 state: BlockState) -> List[Block]:
         outs = []
         for b in token.get("children", []):
+            
             outs.append(
                 Block.copyDefault(
                     type=BlockType.list,
@@ -977,7 +982,7 @@ def createAssistantCommentBlocks(messageFromAI: str) -> list[Dict]:
     markdown = mistune.create_markdown(renderer=TrickleBlockRenderer(),
                                        hard_wrap=True)
     out = markdown(messageFromAI)
-    print(f'createAssistantCommentBlocks: {out=}')
+    # print(f'createAssistantCommentBlocks: {out=}')
     return out
 
 
@@ -987,7 +992,7 @@ def getTextTokens(text):
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     out = len(encoding.encode(text))
     toc = time.time()
-    print("=====> getTextTokens duration: " + str(toc - tic))
+    # print("=====> getTextTokens duration: " + str(toc - tic))
     return out
 
 
@@ -1190,8 +1195,9 @@ if __name__ == "__main__":
     aim7 = "**Creating a Custom LLM ChatBot**\n\nThe screenshot discusses the process of creating a custom Language Model (LLM) ChatBot. It involves strategies like chunking, context generation, and embedding, and uses algorithms like E5 and BERT. The performance of the models is evaluated using scores like BLEU, METEOR, BERT, and ROGUE.\n\n- The document retriever generates responses using all possible combinations of strategies and LLM choices.\n- The models are evaluated based on their scores, with values like 0.91, 0.75, and 0.74 mentioned.\n- The screenshot also mentions a model named ABACUS.AI."
     aim8 = "**Affirmation of the year, right here. Anyone else?**\nThe user @yournewfrequency shares a personal growth affirmation on Instagram, receiving significant engagement.\n\n- App: Instagram\n- User: @yournewfrequency\n- Location: San Diego, California\n- Likes: 1,482 (including julianabeattie)\n- Date: August 31\n- Comments: 48"
     aim9 = "**Apple Q3 FY23 Income Statement**\nThe screenshot provides a comprehensive analysis of Apple's financial performance in Q3 FY23, with a focus on revenue sources and expenses.\n\n- Total Revenue: $81.8B\n- Gross Profit: $36.4B\n- Operating Profit: $23.0B\n- Net Profit: $19.9B\n- Major revenue sources: iPhone ($39.7B), Services ($21.2B), MacBook and other products ($21B)\n- Major expenses: Cost of revenue ($45.4B), Operating expenses ($13.48)\n- Period: Q3 FY23, ending June 2023\n- Source: [appeconomyinsights.com](http://appeconomyinsights.com)"
+    aim10 = "**热门产品列表**\n\n这张图片展示了多个热门产品的列表，每个产品都有其简短描述、分类、点赞数和用户评论。\n\n- **Motiff**: AI驱动的专业UI设计工具\n  - 分类: 设计工具, 生产力\n  - 点赞数: 652\n  - 用户评论: \"恭喜！我喜欢你们的登陆页面，干净且信息丰富。\"\n\n- **Shoutout**: 用户获取、入驻和参与的激励平台\n  - 分类: 营销, 增长黑客, SaaS\n  - 点赞数: 443\n  - 用户评论: \"恭喜发布！\"\n\n- **moimoi**: 用卡片记录你的生活\n  - 分类: 技术, 制作工具\n  - 点赞数: 382\n\n- **Summer**: 为博客读者提供AI摘要按钮\n  - 分类: 写 作, 营销\n  - 点赞数: 289\n\n- **SoonCall**: 管理你的友谊并更频繁地与朋友通话\n  - 分类: iOS, CRM, 健康\n  - 点赞数: 224\n  - 用户评论: \"找到合适的时间往往是问题所在。如果你 按节奏安排，生活就会发生变化...\"\n\n- **DeltaHub**: 在一个计划中设置和管理你的美国有限责任公司\n  - 分类: SaaS, 法律\n  - 点赞数: 148\n\n- **Weekly Calendar in Todoist**: 制 定清晰的每周计划，包含时间块任务和事件\n  - 分类: 任务管理, 日历\n  - 点赞数: 167"
     out = createAssistantCommentBlocks(
-        messageFromAI=aim8
+        messageFromAI=aim10
     )
     pprint.pprint(out)
     # json.dump(out, open("blocks.json",'w'))
